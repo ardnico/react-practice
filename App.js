@@ -22,8 +22,5 @@ const styles = StyleSheet.create({
   },
 });
 
-function test() {
-  console.log("handling test")
-}
 
-test()
+
