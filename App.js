@@ -1,63 +1,106 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-// import React, * as R from 'react-native';
+import InputField from './InputField';
+import List from './List';
+import http from './http';
+import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Platform, ScrollView, FlatList, } from 'react-native';
 
-const STATUSBAR_HEIGHT = Platform.OS == 'ios' ? 20 : StatusBar.currentHeight;
-
-export default class App extends React.Component {
-  
-  constructor(props){
+class Todo extends React.Component {
+  constructor() {
+    super();
     this.state = {
-      todo: [
-        {index:1, title: "Write the script", done: false},
-        {index:2, title: "walking with a dog", done: false}
-      ],
-      currentIndex: 2
+      text: "",
+      lists: [],
     }
   }
-  
+
+  componentDidMount() {
+    this.getTodoList();
+  }
+
+  getTodoList = () => {
+    return http
+      .get('/todo')
+      .then((response) => {
+        this.setState({ lists: response.data })
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }
+
+  handleChange = e => {
+    this.setState({ text: e.target.value })
+  }
+
+  handleSubmit = () => {
+    if (this.state.text === "") {
+      return window.alert("入力してください")
+    }
+    return http
+      .post('/todo', {
+        text: this.state.text
+      })
+      .then(() => {
+        this.setState({ text: "" });
+        this.getTodoList();
+      }
+      )
+      .catch(error => {
+        console.log(error)
+      })
+  }
+
+  handleDelete = (list) => {
+    return http
+      .delete(`/todo/${list.id}`)
+      .then(() =>
+        this.getTodoList()
+      )
+      .catch(error => {
+        console.log(error)
+      })
+  }
+
   render() {
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        paddingTop: STATUSBAR_HEIGHT,
+        // alignItems: 'center',
+        // justifyContent: 'center',
+      },
+      filter: {
+        height: 30,
+      },
+      todolist: {
+        flex: 1,
+      },
+      input: {
+        height: 30,
+      },
+    });
+    const STATUSBAR_HEIGHT = Platform.OS == 'ios' ? 20 : StatusBar.currentHeight;
     return (
-      <View style={styles.container}>
-        <View style={styles.filter}>
-          <Text>Open up App.js to start working on your app!</Text>
-        </View>
-        <ScrollView style={styles.todolist}>
-          {/* 4: Flatlist */}
-          <FlatList data={this.state.todo}
-          renderItem = (item) => {(
-          <Text>
-            {item.title
-            </Text>
-            )}
-          keyExtractor={(item, index) => "todo_" + item.index}
-          />
-        </ScrollView>
-        <View style={styles.input}>
-          <Text>input space</Text>
-        </View>
-      </View>
-    );
+      <div className="todo">
+        <div className="todo-title">
+          <h1>Todo</h1>
+        </div>
+        <InputField
+          text={this.state.text}
+          handleChange={this.handleChange}
+          handleSubmit={this.handleSubmit}
+        />
+        <List
+          lists={this.state.lists}
+          handleDelete={this.handleDelete}
+        />
+      </div>
+    )
   }
 }
 
+export default Todo;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: STATUSBAR_HEIGHT,
-    // alignItems: 'center',
-    // justifyContent: 'center',
-  },
-  filter: {
-    height: 30,
-  },
-  todolist: {
-    flex: 1,
-  },
-  input: {
-    height: 30,
-  },
-});
+
